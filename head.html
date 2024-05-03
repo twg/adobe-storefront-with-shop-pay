@@ -18,3 +18,107 @@
 <script src="/scripts/configs.js" type="module"></script>
 <script src="/scripts/commerce.js" type="module"></script>
 <link rel="stylesheet" href="/styles/styles.css" />
+
+<script src="https://cdn.shopify.com/shopifycloud/shop-js/shop-pay-payment-request.js"></script>
+<div id="shop-pay-button-container"></div>
+<script>
+  window.ShopPay.PaymentRequest.configure({
+    shopId: 87360995609,
+    clientId: 'deloittedigitalca.myshopify.com',
+    debug: true,
+  });
+  window.ShopPay.PaymentRequest.createButton().render(
+    '#shop-pay-button-container'
+  );
+
+  const initialPaymentRequest = window.ShopPay.PaymentRequest.build({
+    lineItems: [
+      {
+        label: 'T-Shirt',
+        originalItemPrice: {
+          amount: 10.0,
+          currencyCode: 'USD',
+        },
+        itemDiscounts: [
+          {
+            label: '10% off',
+            amount: {
+              amount: 1.0,
+              currencyCode: 'USD',
+            },
+          },
+        ],
+        finalItemPrice: {
+          amount: 9.0,
+          currencyCode: 'USD',
+        },
+        quantity: 2,
+        sku: 't-shirt',
+        requiresShipping: true,
+        originalLinePrice: {
+          amount: 20.0,
+          currencyCode: 'USD',
+        },
+        lineDiscounts: [
+          {
+            label: '10% off',
+            amount: {
+              amount: 2.0,
+              currencyCode: 'USD',
+            },
+          },
+        ],
+        finalLinePrice: {
+          amount: 18.0,
+          currencyCode: 'USD',
+        },
+      },
+    ],
+    shippingAddress: null,
+    discountCodes: [],
+    deliveryMethods: [],
+    subtotal: {
+      amount: 18.0,
+      currencyCode: 'USD',
+    },
+    totalTax: {
+      amount: 1.25,
+      currencyCode: 'USD',
+    },
+    total: {
+      amount: 19.25,
+      currencyCode: 'USD',
+    },
+    presentmentCurrency: 'USD',
+    locale: 'en',
+  });
+
+  const session = window.ShopPay.PaymentRequest.createSession({
+    paymentRequest: initialPaymentRequest,
+  });
+
+  console.log(session);
+
+  session.addEventListener('sessionrequested', (ev) => {
+    // Shop Pay Payment Request Session on your server
+    const response = fetch('/shop_pay_session', {
+      method: 'POST',
+      body: JSON.stringify({
+        payment_request: initialPaymentRequest,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const { token, checkoutUrl, sourceIdentifier } = data;
+        console.log(token, sourceIdentifier);
+        session.completeSessionRequest({
+          token,
+          checkoutUrl,
+          sourceIdentifier,
+        });
+      });
+  });
+</script>
